@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Explore verified NISAR scene metadata intersecting Thailand."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230c302d%22/><path d=%22M12 42c14-28 26-28 40 0%22 fill=%22none%22 stroke=%22%23d7e64a%22 stroke-width=%226%22/><circle cx=%2232%22 cy=%2230%22 r=%226%22 fill=%22%23fff%22/></svg>"
+    />
+    <title>NISAR Thailand — Data Availability Explorer</title>
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">NASA–ISRO SAR MISSION</p>
+        <h1>Thailand Data Availability Explorer</h1>
+      </div>
+      <div class="freshness">
+        <span id="status-dot" class="dot"></span>
+        <div>
+          <span id="freshness-label">Loading snapshot…</span
+          ><small id="updated-at">—</small>
+        </div>
+      </div>
+    </header>
+    <main>
+      <aside
+        class="panel"
+        id="filter-panel"
+        aria-label="Search controls"
+        aria-hidden="false"
+      >
+        <div class="panel-actions">
+          <button
+            type="button"
+            id="close-filters"
+            class="icon-button"
+            aria-label="Close filters"
+          >
+            ×
+          </button>
+        </div>
+        <section class="intro">
+          <h2>Find observations</h2>
+          <p>
+            Filter cataloged ASF granules by time, product, orbit, maturity, and
+            place.
+          </p>
+        </section>
+        <form id="filters">
+          <fieldset>
+            <legend>Area of interest</legend>
+            <label for="province">Province</label
+            ><select id="province">
+              <option value="">All Thailand</option>
+            </select>
+            <p id="aoi-status" class="aoi-status" aria-live="polite">
+              Select a province or draw an area on the map.
+            </p>
+            <button type="button" id="clear-aoi" class="quiet hidden">
+              Clear AOI
+            </button>
+          </fieldset>
+          <fieldset>
+            <legend>Acquisition date</legend>
+            <div class="date-grid">
+              <label>From<input id="date-start" type="date" /></label
+              ><label>To<input id="date-end" type="date" /></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend
+              title="GCOV is geocoded covariance, GSLC is geocoded SLC, and RSLC is radar-coordinate SLC."
+            >
+              Product level ⓘ
+            </legend>
+            <div id="product-options" class="checks"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Orbit direction</legend>
+            <div id="orbit-options" class="checks"></div>
+          </fieldset>
+          <fieldset>
+            <legend
+              title="NASA processing maturity: BETA, PROVISIONAL, or VALIDATED. This is separate from the PR production configuration."
+            >
+              Data maturity ⓘ
+            </legend>
+            <div id="maturity-options" class="checks"></div>
+          </fieldset>
+          <button type="reset" class="reset">Reset filters</button>
+        </form>
+        <section class="method">
+          <h3>Availability, not prediction</h3>
+          <p>
+            Only ASF catalog metadata whose footprint intersects Thailand is
+            displayed. Processing maturities remain separate and are not treated
+            as interchangeable.
+          </p>
+          <p id="coverage-note" class="coverage-note">
+            Loading coverage audit…
+          </p>
+        </section>
+      </aside>
+      <section class="workspace">
+        <div class="workspace-toolbar">
+          <button
+            type="button"
+            id="toggle-sidebar"
+            class="toolbar-button"
+            aria-expanded="true"
+            aria-controls="filter-panel"
+          >
+            Hide filters
+          </button>
+          <button
+            type="button"
+            id="open-filters"
+            class="toolbar-button mobile-only"
+            aria-expanded="false"
+            aria-controls="filter-panel"
+          >
+            Filters <span id="filter-count">0</span>
+          </button>
+          <div
+            id="active-filters"
+            class="active-filters"
+            aria-label="Active filters"
+          ></div>
+        </div>
+        <div id="notice" role="status" class="notice hidden"></div>
+        <div class="map-wrap">
+          <div
+            id="map"
+            aria-label="Map of NISAR scene footprints over Thailand"
+          ></div>
+          <fieldset
+            class="layer-switcher"
+            aria-label="Visible footprint products"
+          >
+            <legend>Visible layers</legend>
+            <label><input type="checkbox" value="GCOV" checked /> GCOV</label
+            ><label><input type="checkbox" value="GSLC" checked /> GSLC</label
+            ><label><input type="checkbox" value="RSLC" checked /> RSLC</label>
+          </fieldset>
+        </div>
+        <section class="timeline" aria-labelledby="timeline-title">
+          <header class="timeline-header">
+            <div>
+              <p class="eyebrow">TEMPORAL AVAILABILITY</p>
+              <h2 id="timeline-title">Acquisition Timeline</h2>
+            </div>
+            <div
+              class="timeline-summary"
+              id="timeline-summary"
+              aria-live="polite"
+            ></div>
+          </header>
+          <p class="timeline-help">
+            Bar height is daily granule count; each bar is one distinct UTC
+            acquisition date. Gaps describe observed catalog availability, not
+            proof that NISAR did not observe.
+          </p>
+          <div
+            id="timeline-chart"
+            class="timeline-chart"
+            aria-live="polite"
+          ></div>
+          <div
+            id="timeline-tooltip"
+            class="timeline-tooltip hidden"
+            role="status"
+          ></div>
+          <div class="timeline-footer">
+            <span id="timeline-gap-note"></span>
+            <button type="button" id="clear-timeline-date" class="quiet hidden">
+              Clear selected date
+            </button>
+          </div>
+        </section>
+        <section class="stats" aria-live="polite">
+          <article>
+            <span>Distinct granules</span><strong id="scene-count">—</strong>
+          </article>
+          <article>
+            <span>Acquisition dates</span><strong id="date-count">—</strong>
+          </article>
+          <article>
+            <span>First / last</span><strong id="date-range">—</strong>
+          </article>
+          <article
+            title="Largest interval between consecutive distinct UTC acquisition dates, regardless of orbit or frame."
+          >
+            <span>Largest all-track gap ⓘ</span><strong id="all-gap">—</strong
+            ><small id="all-gap-detail"></small>
+          </article>
+          <article
+            title="Largest interval for the same orbit direction, relative track, and frame. Geometries with unknown track or frame are excluded."
+          >
+            <span>Largest same-geometry gap ⓘ</span
+            ><strong id="geometry-gap">—</strong
+            ><small id="geometry-gap-detail"></small>
+          </article>
+        </section>
+        <section
+          id="scene-details"
+          class="scene-details hidden"
+          aria-live="polite"
+          aria-label="Selected scene details"
+        ></section>
+        <section class="results-head">
+          <div>
+            <p class="eyebrow">MATCHING METADATA</p>
+            <h2>Scenes</h2>
+          </div>
+          <p id="result-note">Select a footprint for details.</p>
+        </section>
+        <div id="scene-list" class="scene-list" role="list"></div>
+        <nav
+          id="pagination"
+          class="pagination"
+          aria-label="Scene result pages"
+        ></nav>
+      </section>
+    </main>
+    <div id="filter-backdrop" class="filter-backdrop hidden"></div>
+    <footer>
+      Metadata:
+      <a href="https://search.asf.alaska.edu/" target="_blank" rel="noopener"
+        >Alaska Satellite Facility</a
+      >
+      · Boundaries:
+      <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener"
+        >geoBoundaries</a
+      >
+      · Times are UTC
+    </footer>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/@turf/turf@7.2.0/turf.min.js"></script>
+    <script type="module" src="assets/app.js"></script>
+  </body>
+</html>

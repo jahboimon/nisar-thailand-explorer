@@ -1,0 +1,29 @@
+{
+  "asf_endpoint": "https://api.daac.asf.alaska.edu/services/search/param",
+  "thailand_wkt": "POLYGON((97.3 5.5,105.7 5.5,105.7 20.5,97.3 20.5,97.3 5.5))",
+  "start_date": "2024-01-01",
+  "window_days": 31,
+  "max_results": 2000,
+  "collections": [
+    {"product": "GCOV", "data_maturity": "VALIDATED", "short_name": "NISAR_L2_GCOV_V1", "start_date": "2026-10-01"},
+    {"product": "GSLC", "data_maturity": "VALIDATED", "short_name": "NISAR_L2_GSLC_V1", "start_date": "2026-10-01"},
+    {"product": "RSLC", "data_maturity": "VALIDATED", "short_name": "NISAR_L1_RSLC_V1", "start_date": "2026-10-01"},
+    {"product": "GCOV", "data_maturity": "PROVISIONAL", "short_name": "NISAR_L2_GCOV_PROVISIONAL_V1", "start_date": "2026-06-01"},
+    {"product": "GSLC", "data_maturity": "PROVISIONAL", "short_name": "NISAR_L2_GSLC_PROVISIONAL_V1", "start_date": "2026-06-01"},
+    {"product": "RSLC", "data_maturity": "PROVISIONAL", "short_name": "NISAR_L1_RSLC_PROVISIONAL_V1", "start_date": "2026-06-01"},
+    {"product": "GCOV", "data_maturity": "BETA", "short_name": "NISAR_L2_GCOV_BETA_V1"},
+    {"product": "GSLC", "data_maturity": "BETA", "short_name": "NISAR_L2_GSLC_BETA_V1"},
+    {"product": "RSLC", "data_maturity": "BETA", "short_name": "NISAR_L1_RSLC_BETA_V1"}
+  ],
+  "known_acquisition_checks": [
+    {
+      "name": "Relative Orbit 112 / Frame 9 GCOV historical series",
+      "product": "GCOV",
+      "track": "112",
+      "frame": "9",
+      "required_dates": ["2026-06-21", "2026-10-31"],
+      "minimum_distinct_dates": 10
+    }
+  ],
+  "province_url": "https://github.com/wmgeolab/geoBoundaries/raw/main/releaseData/gbOpen/THA/ADM1/geoBoundaries-THA-ADM1.geojson"
+}
